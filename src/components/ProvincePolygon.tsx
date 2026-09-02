@@ -4,35 +4,31 @@ import type { ProvinceStatic } from '../types/map';
 
 interface ProvincePolygonProps {
   province: ProvinceStatic;
-  biomeColor: string;
-  ownerColor?: string;
+  fillColor: string;
+  borderColor: string;
+  borderWidth: number;
   selected?: boolean;
   onPress?: (provinceId: number) => void;
 }
 
-const NEUTRAL_BORDER = 'rgba(16, 24, 32, 0.35)';
-
 export default function ProvincePolygon({
   province,
-  biomeColor,
-  ownerColor,
+  fillColor,
+  borderColor,
+  borderWidth,
   selected,
   onPress,
 }: ProvincePolygonProps) {
-  const borderColor = selected ? '#ffffff' : (ownerColor ?? NEUTRAL_BORDER);
-  const borderWidth = selected ? 3 : ownerColor ? 1.5 : 1;
-
   return (
     <>
-      <Path d={province.svgPath} fill={biomeColor} />
-      {ownerColor && <Path d={province.svgPath} fill={ownerColor} fillOpacity={0.45} />}
+      <Path d={province.svgPath} fill={fillColor} />
       {/* transparent top layer: carries the border + is the single hit-test
-          target, so taps register regardless of whether the owner overlay above is present */}
+          target, so taps register regardless of how many layers sit underneath */}
       <Path
         d={province.svgPath}
         fill="transparent"
-        stroke={borderColor}
-        strokeWidth={borderWidth}
+        stroke={selected ? '#ffffff' : borderColor}
+        strokeWidth={selected ? 3 : borderWidth}
         strokeLinejoin="round"
         onPress={onPress ? () => onPress(province.id) : undefined}
       />

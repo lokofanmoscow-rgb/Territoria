@@ -6,22 +6,34 @@ import type { RootStackParamList } from '../navigation/RootNavigator';
 import MapSvg, { type ProvinceOwnership } from '../components/MapSvg';
 import ZoomPanMap from '../components/ZoomPanMap';
 import { getMapData } from '../assets/maps';
-import { PLAYER_COLORS } from '../constants/playerColors';
 import type { MapData } from '../types/map';
 import { getBiome } from '../utils/biome';
 import { parseViewBox } from '../utils/geometry';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Game'>;
 
-const DEMO_PLAYER_COUNT = 3;
+// Демо-палитра для показа "разрезанной на страны" карты — шире, чем
+// PLAYER_COLORS (тот на реальную партию до 4 игроков): здесь каждый регион
+// карты становится отдельной фракцией, как на референсной карте.
+const DEMO_FACTION_COLORS = [
+  '#cf3a3a', // красный
+  '#2f6fb0', // синий
+  '#3f9142', // зелёный
+  '#e0b03c', // жёлтый
+  '#c04f9c', // розовый
+  '#3a9e96', // бирюзовый
+  '#7a52b0', // фиолетовый
+  '#c07a2e', // коричневый
+];
 
 // TODO: заменить на реальные данные из rooms/{roomId}.map.provinces (roomsApi ещё
 // не подключён — это только чтобы увидеть, как карта выглядит с владельцами).
 function buildDemoOwnership(map: MapData): Record<number, ProvinceOwnership> {
   const ownership: Record<number, ProvinceOwnership> = {};
-  map.regions.slice(0, DEMO_PLAYER_COUNT).forEach((region, playerIndex) => {
+  map.regions.forEach((region, factionIndex) => {
+    const color = DEMO_FACTION_COLORS[factionIndex % DEMO_FACTION_COLORS.length];
     region.provinceIds.forEach((provinceId) => {
-      ownership[provinceId] = { color: PLAYER_COLORS[playerIndex], troops: 1 + (provinceId % 5) };
+      ownership[provinceId] = { color, troops: 5 + ((provinceId * 37) % 120) };
     });
   });
   return ownership;
@@ -29,7 +41,7 @@ function buildDemoOwnership(map: MapData): Record<number, ProvinceOwnership> {
 
 export default function GameScreen({ route, navigation }: Props) {
   const { roomId } = route.params;
-  const mapData = useMemo(() => getMapData('medium_01'), []);
+  const mapData = useMemo(() => getMapData('large_01'), []);
   const provinceOwners = useMemo(() => buildDemoOwnership(mapData), [mapData]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
