@@ -7,7 +7,6 @@ interface PlayerHudProps {
   currentRound: number;
 }
 
-// TODO: per-player province/troop totals once map state is wired in.
 export default function PlayerHud({ players, currentRound }: PlayerHudProps) {
   return (
     <View style={styles.container}>
@@ -15,7 +14,10 @@ export default function PlayerHud({ players, currentRound }: PlayerHudProps) {
       {players.map((player) => (
         <View key={player.uid} style={styles.player}>
           <View style={[styles.swatch, { backgroundColor: player.color }]} />
-          <Text style={styles.name}>{player.name}</Text>
+          <Text style={styles.name}>
+            {player.name}
+            {player.gold !== undefined ? ` · ${player.gold}💰` : ''}
+          </Text>
         </View>
       ))}
     </View>
@@ -25,6 +27,7 @@ export default function PlayerHud({ players, currentRound }: PlayerHudProps) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 12,
     padding: 8,
@@ -45,5 +48,6 @@ const styles = StyleSheet.create({
   },
   name: {
     color: '#fff',
+    fontSize: 13,
   },
 });

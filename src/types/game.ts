@@ -1,5 +1,7 @@
 // Firestore document shapes — see rooms/{roomId} in territorygamestructure.md
 
+import type { UnitType } from '../constants/unitTypes';
+
 export type RoomStatus = 'waiting' | 'in_progress' | 'finished';
 
 export interface PlayerInfo {
@@ -7,21 +9,27 @@ export interface PlayerInfo {
   name: string;
   color: string;
   isReady: boolean;
+  /** золото — заполняется при старте партии (см. gameLogic startingGold), в лобби не используется */
+  gold?: number;
 }
+
+/** Состав армии в провинции или в одном перемещении/атаке — количество по типу юнита. */
+export type ArmyComposition = Partial<Record<UnitType, number>>;
 
 export interface ProvinceState {
   ownerId: string | null;
-  troops: number;
+  units: ArmyComposition;
 }
 
 export interface AttackMove {
   from: number;
   to: number;
-  troops: number;
+  units: ArmyComposition;
 }
 
 export interface PlayerPendingMove {
-  reinforcements: Record<number, number>;
+  /** provinceId -> сколько каких юнитов нанять в этой (своей) провинции в этом раунде */
+  reinforcements: Record<number, ArmyComposition>;
   attacks: AttackMove[];
   submitted: boolean;
 }

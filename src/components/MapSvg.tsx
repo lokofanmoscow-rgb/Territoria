@@ -1,19 +1,32 @@
 import { Fragment } from 'react';
 import Svg, { Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
+import { UNIT_TYPE_IDS, UNIT_TYPES } from '../constants/unitTypes';
+import { totalUnits } from '../services/gameLogic';
+import type { ArmyComposition } from '../types/game';
 import type { MapData, ProvinceStatic } from '../types/map';
 import { getBiome } from '../utils/biome';
 import { shade } from '../utils/color';
 import { parseViewBox, pointsToPath } from '../utils/geometry';
 import { hash } from '../utils/random';
 import { getReliefGlyphs } from '../utils/terrain';
+import ArmyIcon from './ArmyIcon';
 import ProvincePolygon from './ProvincePolygon';
-import SoldierFigure from './SoldierFigure';
 import TerrainGlyph from './TerrainGlyph';
 
 export interface ProvinceOwnership {
   color: string;
-  troops: number;
+  units: ArmyComposition;
+}
+
+// Тип юнита, которого в составе больше всего по силе атаки — определяет,
+// какой силуэт рисовать на карте (пехота/кавалерия/артиллерия).
+function getDominantUnitType(units: ArmyComposition) {
+  return UNIT_TYPE_IDS.reduce((dominant, type) => {
+    const power = (units[type] ?? 0) * UNIT_TYPES[type].attack;
+    const dominantPower = (units[dominant] ?? 0) * UNIT_TYPES[dominant].attack;
+    return power > dominantPower ? type : dominant;
+  }, UNIT_TYPE_IDS[0]);
 }
 
 interface MapSvgProps {
@@ -104,14 +117,16 @@ export default function MapSvg({
 
       {map.provinces.map((province) => {
         const ownership = provinceOwners?.[province.id];
-        if (!ownership) return null;
+        const troops = ownership ? totalUnits(ownership.units) : 0;
+        if (!ownership || troops <= 0) return null;
         return (
-          <SoldierFigure
+          <ArmyIcon
             key={`unit-${province.id}`}
             x={province.centroid[0]}
             y={province.centroid[1]}
             color={ownership.color}
-            troops={ownership.troops}
+            troops={troops}
+            unitType={getDominantUnitType(ownership.units)}
           />
         );
       })}

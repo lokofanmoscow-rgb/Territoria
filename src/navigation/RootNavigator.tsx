@@ -15,7 +15,7 @@ export type RootStackParamList = {
   Lobby: undefined;
   RoomWaiting: { roomId: string };
   Game: { roomId: string };
-  GameResult: { roomId: string };
+  GameResult: { roomId: string; winnerName?: string };
   Profile: undefined;
 };
 
