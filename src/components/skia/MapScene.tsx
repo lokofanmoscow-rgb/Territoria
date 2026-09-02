@@ -107,6 +107,7 @@ export default function MapScene({ map, provinceOwners, selectedProvinceId }: Ma
           <Group key={province.id}>
             <ProvinceLayer
               svgPath={province.svgPath}
+              points={province.points}
               fillColor={getFillColor(province, biome.color, ownership?.color)}
               borderColor={border.color}
               borderWidth={border.width}
