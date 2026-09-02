@@ -1,4 +1,5 @@
 import type { MapData, ProvinceStatic } from '../types/map';
+import { hash } from './random';
 
 // Провинция красится не "по владельцу" (это отдельный слой поверх), а как
 // настоящий ландшафт — цвет зависит от широты (centroid.y относительно
@@ -25,13 +26,6 @@ const BANDS: BiomeBand[] = [
   { id: 'hills', label: 'Холмы', maxLatitude: 0.85, colors: ['#b79a52', '#c2a85e', '#ab8f47'] },
   { id: 'desert', label: 'Пустыня', maxLatitude: Infinity, colors: ['#dcc07a', '#e2c884', '#d3b56e'] },
 ];
-
-// Простой детерминированный хэш (Knuth multiplicative), только для выбора
-// оттенка — не нужна крипто-стойкость, только стабильность и разброс.
-function hash(n: number): number {
-  const h = Math.imul(n + 1, 2654435761);
-  return (h ^ (h >>> 13)) >>> 0;
-}
 
 function viewBoxHeight(viewBox: string): number {
   const parts = viewBox.split(' ').map(Number);

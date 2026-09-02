@@ -4,10 +4,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import MapSvg, { type ProvinceOwnership } from '../components/MapSvg';
+import ZoomPanMap from '../components/ZoomPanMap';
 import { getMapData } from '../assets/maps';
 import { PLAYER_COLORS } from '../constants/playerColors';
 import type { MapData } from '../types/map';
 import { getBiome } from '../utils/biome';
+import { parseViewBox } from '../utils/geometry';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Game'>;
 
@@ -34,15 +36,18 @@ export default function GameScreen({ route, navigation }: Props) {
   const selectedProvince = mapData.provinces.find((p) => p.id === selectedId) ?? null;
   const selectedBiome = selectedProvince ? getBiome(selectedProvince, mapData) : null;
   const selectedOwnership = selectedId !== null ? provinceOwners[selectedId] : undefined;
+  const { width: mapWidth, height: mapHeight } = parseViewBox(mapData.viewBox);
 
   return (
     <View style={styles.container}>
-      <MapSvg
-        map={mapData}
-        provinceOwners={provinceOwners}
-        selectedProvinceId={selectedId}
-        onProvincePress={setSelectedId}
-      />
+      <ZoomPanMap contentWidth={mapWidth} contentHeight={mapHeight}>
+        <MapSvg
+          map={mapData}
+          provinceOwners={provinceOwners}
+          selectedProvinceId={selectedId}
+          onProvincePress={setSelectedId}
+        />
+      </ZoomPanMap>
 
       {selectedProvince && selectedBiome && (
         <View style={styles.infoPanel}>

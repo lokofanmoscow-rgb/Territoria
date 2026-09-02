@@ -1,10 +1,13 @@
+import { Fragment } from 'react';
 import Svg, { Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import type { MapData } from '../types/map';
 import { getBiome } from '../utils/biome';
 import { parseViewBox, pointsToPath } from '../utils/geometry';
+import { getReliefGlyphs } from '../utils/terrain';
 import ProvincePolygon from './ProvincePolygon';
-import UnitBadge from './UnitBadge';
+import SoldierFigure from './SoldierFigure';
+import TerrainGlyph from './TerrainGlyph';
 
 export interface ProvinceOwnership {
   color: string;
@@ -28,7 +31,7 @@ export default function MapSvg({
   const coastline = pointsToPath(map.boundary);
 
   return (
-    <Svg viewBox={map.viewBox} width="100%" height="100%">
+    <Svg viewBox={map.viewBox} width={width} height={height}>
       <Defs>
         <RadialGradient id="ocean" cx="50%" cy="50%" r="75%">
           <Stop offset="0%" stopColor="#2f7fa0" stopOpacity={1} />
@@ -46,14 +49,18 @@ export default function MapSvg({
         const biome = getBiome(province, map);
         const ownership = provinceOwners?.[province.id];
         return (
-          <ProvincePolygon
-            key={province.id}
-            province={province}
-            biomeColor={biome.color}
-            ownerColor={ownership?.color}
-            selected={province.id === selectedProvinceId}
-            onPress={onProvincePress}
-          />
+          <Fragment key={province.id}>
+            <ProvincePolygon
+              province={province}
+              biomeColor={biome.color}
+              ownerColor={ownership?.color}
+              selected={province.id === selectedProvinceId}
+              onPress={onProvincePress}
+            />
+            {getReliefGlyphs(province, biome.id).map((glyph, index) => (
+              <TerrainGlyph key={index} {...glyph} biomeColor={biome.color} />
+            ))}
+          </Fragment>
         );
       })}
 
@@ -64,7 +71,7 @@ export default function MapSvg({
         const ownership = provinceOwners?.[province.id];
         if (!ownership) return null;
         return (
-          <UnitBadge
+          <SoldierFigure
             key={`unit-${province.id}`}
             x={province.centroid[0]}
             y={province.centroid[1]}
