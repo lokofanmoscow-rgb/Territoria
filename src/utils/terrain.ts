@@ -54,11 +54,10 @@ const RELIEF_TABLE: Record<BiomeId, { type: ReliefType; weight: number }[]> = {
   ],
 };
 
-// Горы — плотным кластером (гряда, не одинокий пик), поэтому диапазон
-// заметно шире остальных типов.
-const GLYPH_COUNT: Record<ReliefType, [number, number]> = {
+// mountains сюда не входит — для гор ровно один составной глиф-хребет,
+// см. getReliefGlyphs.
+const GLYPH_COUNT: Record<Exclude<ReliefType, 'mountains'>, [number, number]> = {
   forest: [3, 5],
-  mountains: [3, 6],
   hills: [2, 4],
   dunes: [2, 3],
   grass: [3, 4],
@@ -82,16 +81,33 @@ function pickReliefType(biomeId: BiomeId, provinceId: number): ReliefType {
 
 export function getReliefGlyphs(province: ProvinceStatic, biomeId: BiomeId): ReliefGlyph[] {
   const type = pickReliefType(biomeId, province.id);
+  const radius = inscribedRadius(province.points, province.centroid);
+
+  // Горы — не рассыпанные иконки-треугольники, а один цельный многовершинный
+  // хребет (см. MountainRange в TerrainGlyph.tsx), отцентрованный в
+  // провинции с небольшим дрожанием — гряда должна читаться как ландшафт,
+  // а не как штамп значка.
+  if (type === 'mountains') {
+    const size = Math.max(7, Math.min(17, radius * 0.6));
+    const jitter = radius * 0.12;
+    const angle = ((hash(province.id * 53 + 11) % 360) * Math.PI) / 180;
+    return [
+      {
+        type,
+        x: province.centroid[0] + Math.cos(angle) * jitter,
+        y: province.centroid[1] + Math.sin(angle) * jitter,
+        size,
+        rotation: 0,
+      },
+    ];
+  }
+
   const [min, max] = GLYPH_COUNT[type];
   if (max === 0) return [];
 
   const count = min + (hash(province.id * 31 + 3) % (max - min + 1));
-  const radius = inscribedRadius(province.points, province.centroid);
   const placementRadius = radius * 0.6;
-  // Горы рисуются крупнее остального рельефа — гряда должна быть видна
-  // издалека, а не теряться среди деревьев и холмов.
-  const sizeCap = type === 'mountains' ? 15 : 10;
-  const size = Math.max(4, Math.min(sizeCap, radius * (type === 'mountains' ? 0.3 : 0.24)));
+  const size = Math.max(4, Math.min(10, radius * 0.24));
   const baseAngle = ((hash(province.id * 53 + 11) % 360) * Math.PI) / 180;
 
   const glyphs: ReliefGlyph[] = [];

@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import Svg, { Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { UNIT_TYPE_IDS, UNIT_TYPES } from '../constants/unitTypes';
 import { totalUnits } from '../services/gameLogic';
@@ -83,6 +83,20 @@ export default function MapSvg({
           <Stop offset="0%" stopColor="#3f92b4" stopOpacity={1} />
           <Stop offset="100%" stopColor="#255e79" stopOpacity={1} />
         </RadialGradient>
+        {/* Общие градиенты для значков гор — переиспользуются всеми
+            TerrainGlyph-инстансами на карте, а не создаются заново на каждый. */}
+        <LinearGradient id="mountainFront" x1="0" y1="1" x2="0" y2="0">
+          <Stop offset="0" stopColor="#564f45" stopOpacity={1} />
+          <Stop offset="1" stopColor="#a89c8d" stopOpacity={1} />
+        </LinearGradient>
+        <LinearGradient id="mountainBack" x1="0" y1="1" x2="0" y2="0">
+          <Stop offset="0" stopColor="#8b95a1" stopOpacity={0.55} />
+          <Stop offset="1" stopColor="#c3ccd3" stopOpacity={0.55} />
+        </LinearGradient>
+        <LinearGradient id="forestCanopy" x1="0" y1="1" x2="0" y2="0">
+          <Stop offset="0" stopColor="#2a5c34" stopOpacity={1} />
+          <Stop offset="1" stopColor="#4f9257" stopOpacity={1} />
+        </LinearGradient>
       </Defs>
 
       <Rect x={x} y={y} width={width} height={height} fill="url(#ocean)" />

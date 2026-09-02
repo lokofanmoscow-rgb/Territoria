@@ -1,4 +1,4 @@
-import { G, Path, Polygon, Rect } from 'react-native-svg';
+import { Ellipse, G, Path, Polygon, Rect } from 'react-native-svg';
 
 import type { ReliefType } from '../utils/terrain';
 
@@ -25,15 +25,36 @@ export default function TerrainGlyph({ type, x, y, size, rotation }: TerrainGlyp
       {type === 'forest' && (
         <>
           <Rect x={-0.4} y={2} width={0.8} height={1.6} fill="#4a3524" />
-          <Polygon points="0,-2.6 -2.8,1.6 2.8,1.6" fill="#2f6b3a" stroke={OUTLINE} strokeWidth={0.3} />
-          <Polygon points="0,-5 -2,-1 2,-1" fill="#357a41" stroke={OUTLINE} strokeWidth={0.3} />
+          <Polygon points="0,-2.6 -2.8,1.6 2.8,1.6" fill="url(#forestCanopy)" stroke={OUTLINE} strokeWidth={0.3} />
+          <Polygon points="0,-5 -2,-1 2,-1" fill="url(#forestCanopy)" stroke={OUTLINE} strokeWidth={0.3} />
         </>
       )}
       {type === 'mountains' && (
         <>
-          <Polygon points="-6,2 -3,-2 0,2" fill="#7a6f61" stroke={OUTLINE} strokeWidth={0.3} />
-          <Polygon points="-4,2 0,-5 4,2" fill="#8b7d6b" stroke={OUTLINE} strokeWidth={0.35} />
-          <Polygon points="-1.2,-3 0,-5 1.2,-3" fill="#f2f5f6" />
+          {/* тень под хребтом — прижимает его к земле */}
+          <Ellipse cx={0} cy={4.3} rx={9} ry={1.5} fill="rgba(16, 24, 32, 0.22)" />
+          {/* дальний план: ниже, светлее, полупрозрачный — воздушная перспектива */}
+          <Path
+            d="M -10 4 L -7.5 -3.3 L -5 -0.6 L -2 -6.2 L 1 -1.4 L 4.5 -5.3 L 7.5 -0.4 L 10 4 Z"
+            fill="url(#mountainBack)"
+          />
+          {/* ближний план: собственно хребет, освещён сверху (градиент тёмный->светлый) */}
+          <Path
+            d="M -9 4 L -6.5 -2 L -4 1 L -1 -8 L 2 -1 L 5.5 -9 L 8.5 0 L 9 4 Z"
+            fill="url(#mountainFront)"
+            stroke={OUTLINE}
+            strokeWidth={0.25}
+          />
+          {/* снег — только на двух самых высоких вершинах */}
+          <Polygon points="-1.7,-6.1 -1,-8 -0.3,-6.1" fill="#f4f7f8" opacity={0.95} />
+          <Polygon points="4.8,-7.2 5.5,-9 6.2,-7.2" fill="#f4f7f8" opacity={0.95} />
+          {/* пара тёмных расщелин для фактуры склона */}
+          <Path
+            d="M -4 1 L -2.6 -2.6 M 2 -1 L 3.1 -4.3"
+            stroke="rgba(16, 24, 32, 0.35)"
+            strokeWidth={0.3}
+            strokeLinecap="round"
+          />
         </>
       )}
       {type === 'hills' && (
