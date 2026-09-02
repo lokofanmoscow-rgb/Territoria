@@ -1,7 +1,7 @@
 import { useCallback, type PropsWithChildren } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 interface ZoomPanMapProps extends PropsWithChildren {
   contentWidth: number;
@@ -9,6 +9,10 @@ interface ZoomPanMapProps extends PropsWithChildren {
   minScale?: number;
   maxScale?: number;
   initialScale?: number;
+  // Координаты в системе координат контента (те же единицы, что viewBox
+  // карты) — Skia-канвас не даёт per-shape onPress как раньше react-native-svg,
+  // поэтому какая провинция под пальцем, определяет уже вызывающий код.
+  onTap?: (contentX: number, contentY: number) => void;
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -26,6 +30,7 @@ export default function ZoomPanMap({
   minScale = 0.5,
   maxScale = 3,
   initialScale = 1,
+  onTap,
   children,
 }: ZoomPanMapProps) {
   const scale = useSharedValue(initialScale);
@@ -87,7 +92,16 @@ export default function ZoomPanMap({
       clampTranslation();
     });
 
-  const composedGesture = Gesture.Simultaneous(panGesture, pinchGesture);
+  // e.x/e.y жеста, навешенного на этот же Animated.View, приходят в его
+  // локальных (дотрансформенных) координатах — то есть уже в тех же единицах,
+  // что viewBox карты, без ручного пересчёта через scale/translate.
+  const tapGesture = Gesture.Tap()
+    .maxDistance(10)
+    .onEnd((e) => {
+      if (onTap) runOnJS(onTap)(e.x, e.y);
+    });
+
+  const composedGesture = Gesture.Simultaneous(panGesture, pinchGesture, tapGesture);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [

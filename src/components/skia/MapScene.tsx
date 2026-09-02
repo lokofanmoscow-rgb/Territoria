@@ -1,18 +1,19 @@
-import { Fragment } from 'react';
-import Svg, { Defs, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
+import { useMemo } from 'react';
+import { Group, Path, RadialGradient, Rect, matchFont, vec } from '@shopify/react-native-skia';
 
-import { UNIT_TYPE_IDS, UNIT_TYPES } from '../constants/unitTypes';
-import { totalUnits } from '../services/gameLogic';
-import type { ArmyComposition } from '../types/game';
-import type { MapData, ProvinceStatic } from '../types/map';
-import { getBiome } from '../utils/biome';
-import { shade } from '../utils/color';
-import { parseViewBox, pointsToPath } from '../utils/geometry';
-import { hash } from '../utils/random';
-import { getReliefGlyphs } from '../utils/terrain';
-import ArmyIcon from './ArmyIcon';
-import ProvincePolygon from './ProvincePolygon';
-import TerrainGlyph from './TerrainGlyph';
+import { UNIT_TYPE_IDS, UNIT_TYPES } from '../../constants/unitTypes';
+import { totalUnits } from '../../services/gameLogic';
+import type { ArmyComposition } from '../../types/game';
+import type { MapData, ProvinceStatic } from '../../types/map';
+import { getBiome } from '../../utils/biome';
+import { shade } from '../../utils/color';
+import { parseViewBox, pointsToPath } from '../../utils/geometry';
+import { hash } from '../../utils/random';
+import { getReliefGlyphs } from '../../utils/terrain';
+import ArmyIconSkia from './ArmyIconSkia';
+import NoiseOverlay from './NoiseOverlay';
+import ProvinceLayer from './ProvinceLayer';
+import TerrainGlyphSkia from './TerrainGlyphSkia';
 
 export interface ProvinceOwnership {
   color: string;
@@ -29,28 +30,25 @@ function getDominantUnitType(units: ArmyComposition) {
   }, UNIT_TYPE_IDS[0]);
 }
 
-interface MapSvgProps {
+export interface MapSceneProps {
   map: MapData;
   provinceOwners?: Record<number, ProvinceOwnership>;
   selectedProvinceId?: number | null;
-  onProvincePress?: (provinceId: number) => void;
 }
 
 const NEUTRAL_BORDER = 'rgba(16, 24, 32, 0.35)';
 
 // Владелец красит провинцию сплошным цветом (не оверлеем поверх биома —
 // биом виден только через значки рельефа). Небольшая тональная вариация по
-// id, чтобы страна не выглядела одним плоским пятном, как на референсной
-// карте, где соседние провинции одного цвета чуть отличаются оттенком.
+// id, чтобы страна не выглядела одним плоским пятном.
 function getFillColor(province: ProvinceStatic, biomeColor: string, ownerColor?: string): string {
   if (!ownerColor) return biomeColor;
   const variation = 0.9 + (hash(province.id) % 16) / 100;
   return shade(ownerColor, variation);
 }
 
-// Внутри своей территории границы между провинциями почти не видны (как
-// цельный блок цвета на политической карте), а на стыке с чужим владением
-// или нейтралом — жирная тёмная линия.
+// Внутри своей территории границы между провинциями почти не видны, а на
+// стыке с чужим владением или нейтралом — жирная тёмная линия.
 function getBorderStyle(
   province: ProvinceStatic,
   ownerColor: string | undefined,
@@ -67,83 +65,79 @@ function getBorderStyle(
     : { color: 'rgba(16, 24, 32, 0.12)', width: 0.5 };
 }
 
-export default function MapSvg({
-  map,
-  provinceOwners,
-  selectedProvinceId,
-  onProvincePress,
-}: MapSvgProps) {
+// Собственно сцена карты как дерево Skia-примитивов (без хостового <Canvas>)
+// — вынесено отдельно от MapCanvas.tsx, чтобы его можно было рендерить и
+// тестировать headless-снапшотами через SkiaSGRoot, не поднимая настоящий RN.
+export default function MapScene({ map, provinceOwners, selectedProvinceId }: MapSceneProps) {
   const { x, y, width, height } = parseViewBox(map.viewBox);
   const coastline = pointsToPath(map.boundary);
+  const badgeFont = useMemo(
+    () => matchFont({ fontFamily: 'System', fontSize: 5.6, fontWeight: '800' }),
+    [],
+  );
 
   return (
-    <Svg viewBox={map.viewBox} width={width} height={height}>
-      <Defs>
-        <RadialGradient id="ocean" cx="50%" cy="50%" r="75%">
-          <Stop offset="0%" stopColor="#3f92b4" stopOpacity={1} />
-          <Stop offset="100%" stopColor="#255e79" stopOpacity={1} />
-        </RadialGradient>
-        {/* Общие градиенты для значков гор — переиспользуются всеми
-            TerrainGlyph-инстансами на карте, а не создаются заново на каждый. */}
-        <LinearGradient id="mountainFront" x1="0" y1="1" x2="0" y2="0">
-          <Stop offset="0" stopColor="#564f45" stopOpacity={1} />
-          <Stop offset="1" stopColor="#a89c8d" stopOpacity={1} />
-        </LinearGradient>
-        <LinearGradient id="mountainBack" x1="0" y1="1" x2="0" y2="0">
-          <Stop offset="0" stopColor="#8b95a1" stopOpacity={0.55} />
-          <Stop offset="1" stopColor="#c3ccd3" stopOpacity={0.55} />
-        </LinearGradient>
-        <LinearGradient id="forestCanopy" x1="0" y1="1" x2="0" y2="0">
-          <Stop offset="0" stopColor="#2a5c34" stopOpacity={1} />
-          <Stop offset="1" stopColor="#4f9257" stopOpacity={1} />
-        </LinearGradient>
-      </Defs>
-
-      <Rect x={x} y={y} width={width} height={height} fill="url(#ocean)" />
+    <>
+      <Rect x={x} y={y} width={width} height={height} style="fill">
+        <RadialGradient
+          c={vec(x + width / 2, y + height / 2)}
+          r={Math.max(width, height) * 0.75}
+          colors={['#3f92b4', '#255e79']}
+        />
+      </Rect>
+      <NoiseOverlay
+        path={`M ${x} ${y} L ${x + width} ${y} L ${x + width} ${y + height} L ${x} ${y + height} Z`}
+        blendMode="overlay"
+        opacity={0.5}
+        freqX={0.02}
+        freqY={0.12}
+        octaves={2}
+        seed={3}
+      />
 
       {/* Мелководье: широкая полупрозрачная обводка береговой линии — половина
           уйдёт под провинции, снаружи останется мягкий голубой ореол у берега. */}
-      <Path d={coastline} fill="none" stroke="rgba(150, 205, 220, 0.3)" strokeWidth={10} strokeLinejoin="round" />
+      <Path path={coastline} style="stroke" color="rgba(150, 205, 220, 0.3)" strokeWidth={10} strokeJoin="round" />
 
       {map.provinces.map((province) => {
         const biome = getBiome(province, map);
         const ownership = provinceOwners?.[province.id];
         const border = getBorderStyle(province, ownership?.color, provinceOwners);
         return (
-          <Fragment key={province.id}>
-            <ProvincePolygon
-              province={province}
+          <Group key={province.id}>
+            <ProvinceLayer
+              svgPath={province.svgPath}
               fillColor={getFillColor(province, biome.color, ownership?.color)}
               borderColor={border.color}
               borderWidth={border.width}
               selected={province.id === selectedProvinceId}
-              onPress={onProvincePress}
             />
             {getReliefGlyphs(province, biome.id).map((glyph, index) => (
-              <TerrainGlyph key={index} {...glyph} />
+              <TerrainGlyphSkia key={index} {...glyph} />
             ))}
-          </Fragment>
+          </Group>
         );
       })}
 
       {/* Тонкая светлая кромка поверх провинций — граница суши и моря. */}
-      <Path d={coastline} fill="none" stroke="#eee3c4" strokeWidth={1.5} strokeLinejoin="round" />
+      <Path path={coastline} style="stroke" color="#eee3c4" strokeWidth={1.5} strokeJoin="round" />
 
       {map.provinces.map((province) => {
         const ownership = provinceOwners?.[province.id];
         const troops = ownership ? totalUnits(ownership.units) : 0;
         if (!ownership || troops <= 0) return null;
         return (
-          <ArmyIcon
+          <ArmyIconSkia
             key={`unit-${province.id}`}
             x={province.centroid[0]}
             y={province.centroid[1]}
             color={ownership.color}
             troops={troops}
             unitType={getDominantUnitType(ownership.units)}
+            font={badgeFont}
           />
         );
       })}
-    </Svg>
+    </>
   );
 }

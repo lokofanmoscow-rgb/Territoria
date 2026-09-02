@@ -3,7 +3,7 @@ import { Button, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import AttackPanel, { type AttackTarget, type QueuedAttack } from '../components/AttackPanel';
-import MapSvg, { type ProvinceOwnership } from '../components/MapSvg';
+import MapCanvas, { type ProvinceOwnership } from '../components/skia/MapCanvas';
 import PlayerHud from '../components/PlayerHud';
 import ReinforcementPanel from '../components/ReinforcementPanel';
 import ZoomPanMap from '../components/ZoomPanMap';
@@ -16,6 +16,7 @@ import type { ArmyComposition, AttackMove, PlayerInfo, PlayerPendingMove, Provin
 import type { MapData } from '../types/map';
 import { getBiome } from '../utils/biome';
 import { parseViewBox } from '../utils/geometry';
+import { createProvinceHitTester } from '../utils/provinceHitTest';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Game'>;
 
@@ -56,6 +57,7 @@ export default function GameScreen({ navigation }: Props) {
   const mapData = useMemo(() => getMapData(DEMO_MAP_NAME), []);
   const initial = useMemo(() => buildInitialGameState(mapData), [mapData]);
   const { width: mapWidth, height: mapHeight } = parseViewBox(mapData.viewBox);
+  const hitTestProvince = useMemo(() => createProvinceHitTester(mapData), [mapData]);
 
   const [provinces, setProvinces] = useState(initial.provinces);
   const [players, setPlayers] = useState(initial.players);
@@ -169,6 +171,11 @@ export default function GameScreen({ navigation }: Props) {
     setPendingAttacks((prev) => [...prev, { from: selectedId, to: targetId, units }]);
   }
 
+  function handleTap(x: number, y: number) {
+    const provinceId = hitTestProvince(x, y);
+    if (provinceId !== null) setSelectedId(provinceId);
+  }
+
   function handleRemoveAttack(id: number) {
     setPendingAttacks((prev) => prev.filter((_, index) => index !== id));
   }
@@ -201,13 +208,8 @@ export default function GameScreen({ navigation }: Props) {
     <View style={styles.container}>
       <PlayerHud players={players} currentRound={currentRound} />
 
-      <ZoomPanMap contentWidth={mapWidth} contentHeight={mapHeight}>
-        <MapSvg
-          map={mapData}
-          provinceOwners={provinceOwners}
-          selectedProvinceId={selectedId}
-          onProvincePress={setSelectedId}
-        />
+      <ZoomPanMap contentWidth={mapWidth} contentHeight={mapHeight} onTap={handleTap}>
+        <MapCanvas map={mapData} provinceOwners={provinceOwners} selectedProvinceId={selectedId} />
       </ZoomPanMap>
 
       {selectedProvince && selectedBiome && (
