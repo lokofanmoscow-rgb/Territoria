@@ -24,7 +24,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Game'>;
 // (ИИ — отдельная система, не входит в этот проход). Реальные rooms/{roomId}
 // через roomsApi ещё не подключены — этот экран проверяет, что resolveRound()
 // (экономика + типы юнитов + бой) реально работает и управляем с UI.
-const DEMO_MAP_NAME = 'small_02';
+const DEMO_MAP_NAME = 'australia';
 const HUMAN_UID = 'you';
 const STARTING_GARRISON: ArmyComposition = { infantry: 3 };
 

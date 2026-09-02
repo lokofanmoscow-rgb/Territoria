@@ -88,5 +88,23 @@
     "sizeClass": "large",
     "provinceCount": 50,
     "regions": 8
+  },
+  {
+    "name": "australia",
+    "sizeClass": "small",
+    "provinceCount": 7,
+    "regions": 3
+  },
+  {
+    "name": "brazil",
+    "sizeClass": "medium",
+    "provinceCount": 26,
+    "regions": 4
+  },
+  {
+    "name": "japan",
+    "sizeClass": "large",
+    "provinceCount": 47,
+    "regions": 7
   }
 ]

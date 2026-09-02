@@ -19,6 +19,11 @@ const registry: Record<string, MapData> = {
   large_03: require('./data/large_03.json'),
   large_04: require('./data/large_04.json'),
   large_05: require('./data/large_05.json'),
+  // Карты на реальной географии (Natural Earth admin-1 через apexmaps-geo,
+  // public domain) — см. maps-source/geo-source/README.md.
+  australia: require('./data/australia.json'),
+  brazil: require('./data/brazil.json'),
+  japan: require('./data/japan.json'),
 };
 
 export const mapSummaries = summary as MapSummary[];

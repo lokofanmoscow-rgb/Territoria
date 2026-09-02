@@ -20,10 +20,14 @@ export interface RegionStatic {
 export interface MapData {
   name: string;
   sizeClass: SizeClass;
-  seed: number;
+  /** только у процедурных карт (map_generator.py) — у реальных географических его нет */
+  seed?: number;
+  /** для карт на реальной географии — откуда взяты границы, см. maps-source/geo-source/README.md */
+  source?: string;
   viewBox: string;
   provinceCount: number;
-  boundary: [number, number][];
+  /** массив колец, а не одно — архипелаги (Япония, Австралия+Тасмания) состоят из нескольких островов */
+  boundary: [number, number][][];
   provinces: ProvinceStatic[];
   regions: RegionStatic[];
 }

@@ -216,7 +216,9 @@ def generate_map(name, size_class, n_provinces, seed, base_radius):
         "seed": seed,
         "viewBox": f"0 0 {VIEWBOX_W} {VIEWBOX_H}",
         "provinceCount": len(provinces),
-        "boundary": boundary_coords,
+        # массив колец (не одно) — формат общий с картами на реальной географии,
+        # где остров может состоять из нескольких колец (архипелаг)
+        "boundary": [boundary_coords],
         "provinces": provinces,
         "regions": regions,
     }

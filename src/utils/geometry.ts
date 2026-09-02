@@ -1,8 +1,14 @@
-export function pointsToPath(points: [number, number][]): string {
-  if (points.length === 0) return '';
-  const [first, ...rest] = points;
+function ringToPath(ring: [number, number][]): string {
+  if (ring.length === 0) return '';
+  const [first, ...rest] = ring;
   const segments = rest.map(([x, y]) => `L ${x} ${y}`).join(' ');
   return `M ${first[0]} ${first[1]} ${segments} Z`;
+}
+
+// Один <Path> может содержать несколько подпутей "M...Z" — этого достаточно,
+// чтобы одним элементом нарисовать архипелаг (Япония, Австралия+Тасмания).
+export function pointsToPath(rings: [number, number][][]): string {
+  return rings.map(ringToPath).join(' ');
 }
 
 export function parseViewBox(viewBox: string): { x: number; y: number; width: number; height: number } {
