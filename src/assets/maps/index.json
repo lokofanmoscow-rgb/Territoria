@@ -1,0 +1,92 @@
+[
+  {
+    "name": "small_01",
+    "sizeClass": "small",
+    "provinceCount": 10,
+    "regions": 3
+  },
+  {
+    "name": "small_02",
+    "sizeClass": "small",
+    "provinceCount": 14,
+    "regions": 3
+  },
+  {
+    "name": "small_03",
+    "sizeClass": "small",
+    "provinceCount": 11,
+    "regions": 3
+  },
+  {
+    "name": "small_04",
+    "sizeClass": "small",
+    "provinceCount": 10,
+    "regions": 3
+  },
+  {
+    "name": "small_05",
+    "sizeClass": "small",
+    "provinceCount": 13,
+    "regions": 3
+  },
+  {
+    "name": "medium_01",
+    "sizeClass": "medium",
+    "provinceCount": 23,
+    "regions": 4
+  },
+  {
+    "name": "medium_02",
+    "sizeClass": "medium",
+    "provinceCount": 21,
+    "regions": 3
+  },
+  {
+    "name": "medium_03",
+    "sizeClass": "medium",
+    "provinceCount": 20,
+    "regions": 3
+  },
+  {
+    "name": "medium_04",
+    "sizeClass": "medium",
+    "provinceCount": 27,
+    "regions": 4
+  },
+  {
+    "name": "medium_05",
+    "sizeClass": "medium",
+    "provinceCount": 25,
+    "regions": 4
+  },
+  {
+    "name": "large_01",
+    "sizeClass": "large",
+    "provinceCount": 50,
+    "regions": 8
+  },
+  {
+    "name": "large_02",
+    "sizeClass": "large",
+    "provinceCount": 46,
+    "regions": 7
+  },
+  {
+    "name": "large_03",
+    "sizeClass": "large",
+    "provinceCount": 49,
+    "regions": 8
+  },
+  {
+    "name": "large_04",
+    "sizeClass": "large",
+    "provinceCount": 41,
+    "regions": 6
+  },
+  {
+    "name": "large_05",
+    "sizeClass": "large",
+    "provinceCount": 50,
+    "regions": 8
+  }
+]
