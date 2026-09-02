@@ -19,11 +19,13 @@ const registry: Record<string, MapData> = {
   large_03: require('./data/large_03.json'),
   large_04: require('./data/large_04.json'),
   large_05: require('./data/large_05.json'),
-  // Карты на реальной географии (Natural Earth admin-1 через apexmaps-geo,
-  // public domain) — см. maps-source/geo-source/README.md.
-  australia: require('./data/australia.json'),
-  brazil: require('./data/brazil.json'),
-  japan: require('./data/japan.json'),
+  // Карты на реальной географии: настоящие контуры стран (Natural Earth,
+  // public domain, через apexmaps-geo), внутри каждой страны — процедурное
+  // Voronoi-деление на несколько провинций (не настоящие admin1-границы) —
+  // см. maps-source/geo-source/README.md.
+  world_small: require('./data/world_small.json'),
+  world_medium: require('./data/world_medium.json'),
+  world_large: require('./data/world_large.json'),
 };
 
 export const mapSummaries = summary as MapSummary[];

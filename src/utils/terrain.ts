@@ -19,42 +19,47 @@ export interface ReliefGlyph {
 // самим биомом один-в-один.
 const RELIEF_TABLE: Record<BiomeId, { type: ReliefType; weight: number }[]> = {
   tundra: [
-    { type: 'none', weight: 50 },
+    { type: 'none', weight: 35 },
     { type: 'hills', weight: 25 },
-    { type: 'mountains', weight: 25 },
+    { type: 'mountains', weight: 40 },
   ],
   taiga: [
-    { type: 'forest', weight: 65 },
+    { type: 'forest', weight: 55 },
     { type: 'hills', weight: 15 },
-    { type: 'mountains', weight: 20 },
+    { type: 'mountains', weight: 30 },
   ],
   forest: [
-    { type: 'forest', weight: 80 },
-    { type: 'hills', weight: 12 },
-    { type: 'none', weight: 8 },
+    { type: 'forest', weight: 65 },
+    { type: 'hills', weight: 15 },
+    { type: 'mountains', weight: 15 },
+    { type: 'none', weight: 5 },
   ],
   grassland: [
-    { type: 'none', weight: 35 },
-    { type: 'grass', weight: 35 },
+    { type: 'none', weight: 25 },
+    { type: 'grass', weight: 25 },
     { type: 'forest', weight: 15 },
-    { type: 'hills', weight: 15 },
+    { type: 'hills', weight: 20 },
+    { type: 'mountains', weight: 15 },
   ],
   hills: [
-    { type: 'hills', weight: 50 },
-    { type: 'mountains', weight: 25 },
+    { type: 'hills', weight: 35 },
+    { type: 'mountains', weight: 40 },
     { type: 'forest', weight: 25 },
   ],
   desert: [
-    { type: 'dunes', weight: 65 },
-    { type: 'none', weight: 20 },
+    { type: 'dunes', weight: 55 },
+    { type: 'none', weight: 15 },
     { type: 'hills', weight: 15 },
+    { type: 'mountains', weight: 15 },
   ],
 };
 
+// Горы — плотным кластером (гряда, не одинокий пик), поэтому диапазон
+// заметно шире остальных типов.
 const GLYPH_COUNT: Record<ReliefType, [number, number]> = {
   forest: [3, 5],
-  mountains: [1, 2],
-  hills: [2, 3],
+  mountains: [3, 6],
+  hills: [2, 4],
   dunes: [2, 3],
   grass: [3, 4],
   none: [0, 0],
@@ -83,7 +88,10 @@ export function getReliefGlyphs(province: ProvinceStatic, biomeId: BiomeId): Rel
   const count = min + (hash(province.id * 31 + 3) % (max - min + 1));
   const radius = inscribedRadius(province.points, province.centroid);
   const placementRadius = radius * 0.6;
-  const size = Math.max(4, Math.min(10, radius * 0.24));
+  // Горы рисуются крупнее остального рельефа — гряда должна быть видна
+  // издалека, а не теряться среди деревьев и холмов.
+  const sizeCap = type === 'mountains' ? 15 : 10;
+  const size = Math.max(4, Math.min(sizeCap, radius * (type === 'mountains' ? 0.3 : 0.24)));
   const baseAngle = ((hash(province.id * 53 + 11) % 360) * Math.PI) / 180;
 
   const glyphs: ReliefGlyph[] = [];

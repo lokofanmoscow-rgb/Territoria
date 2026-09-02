@@ -90,21 +90,21 @@
     "regions": 8
   },
   {
-    "name": "australia",
+    "name": "world_small",
     "sizeClass": "small",
-    "provinceCount": 7,
+    "provinceCount": 12,
     "regions": 3
   },
   {
-    "name": "brazil",
+    "name": "world_medium",
     "sizeClass": "medium",
-    "provinceCount": 26,
-    "regions": 4
+    "provinceCount": 25,
+    "regions": 6
   },
   {
-    "name": "japan",
+    "name": "world_large",
     "sizeClass": "large",
-    "provinceCount": 47,
-    "regions": 7
+    "provinceCount": 43,
+    "regions": 11
   }
 ]
