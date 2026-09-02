@@ -3,17 +3,16 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import type { RootStackParamList } from '../navigation/RootNavigator';
+import { subscribeAuthState } from '../services/authApi';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
-// TODO: replace with real Firebase Auth state check once services/firebase.ts is wired up.
 export default function SplashScreen({ navigation }: Props) {
   useEffect(() => {
-    const isAuthenticated = false;
-    const timer = setTimeout(() => {
-      navigation.replace(isAuthenticated ? 'Lobby' : 'Auth');
-    }, 500);
-    return () => clearTimeout(timer);
+    const unsubscribe = subscribeAuthState((user) => {
+      navigation.replace(user ? 'Lobby' : 'Auth');
+    });
+    return unsubscribe;
   }, [navigation]);
 
   return (
