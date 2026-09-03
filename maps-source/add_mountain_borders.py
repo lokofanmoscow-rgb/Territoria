@@ -104,7 +104,13 @@ def shared_border(poly_a: Polygon, poly_b: Polygon):
 
 
 def process_map(path: Path) -> None:
-    data = json.loads(path.read_text(encoding="utf-8"))
+    raw = path.read_text(encoding="utf-8")
+    # Процедурные карты (small/medium/large_*) хранятся pretty-printed
+    # (indent=2), карты на реальной географии (world_*) — компактно в одну
+    # строку. Сохраняем формат конкретного файла как есть, чтобы diff не
+    # разъезжался на пустом месте.
+    pretty = "\n" in raw
+    data = json.loads(raw)
     provinces = data["provinces"]
     by_id = {p["id"]: p for p in provinces}
     neighbors = {p["id"]: p["neighbors"] for p in provinces}
@@ -132,7 +138,10 @@ def process_map(path: Path) -> None:
         mountain_borders.append({"a": a, "b": b, **border})
 
     data["mountainBorders"] = mountain_borders
-    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    if pretty:
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    else:
+        path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
 
     blocked_pct = 100 * len(mountain_borders) / max(1, len(all_pairs))
     print(f"{path.name}: {len(all_pairs)} границ, {len(mountain_borders)} горных ({blocked_pct:.0f}%)")
