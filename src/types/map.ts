@@ -17,6 +17,22 @@ export interface RegionStatic {
   controlBonus: number;
 }
 
+/**
+ * Горный хребет НА ГРАНИЦЕ между провинциями a и b (не внутри одной из них) —
+ * блокирует прямую атаку между ними в обе стороны, см. gameLogic.ts pairKey/
+ * isBlockedPair. x/y — точка на самой границе (не centroid), angle — её
+ * направление в градусах (для поворота значка вдоль границы), length — длина
+ * общей границы в единицах viewBox (для масштаба значка).
+ */
+export interface MountainBorder {
+  a: number;
+  b: number;
+  x: number;
+  y: number;
+  angle: number;
+  length: number;
+}
+
 export interface MapData {
   name: string;
   sizeClass: SizeClass;
@@ -30,6 +46,8 @@ export interface MapData {
   boundary: [number, number][][];
   provinces: ProvinceStatic[];
   regions: RegionStatic[];
+  /** горные границы, блокирующие прямую атаку между конкретной парой провинций */
+  mountainBorders: MountainBorder[];
 }
 
 export interface MapSummary {

@@ -11,6 +11,7 @@ import { parseViewBox, pointsToPath } from '../../utils/geometry';
 import { hash } from '../../utils/random';
 import { getReliefGlyphs } from '../../utils/terrain';
 import ArmyIconSkia from './ArmyIconSkia';
+import MountainBorderGlyph from './MountainBorderGlyph';
 import NoiseOverlay from './NoiseOverlay';
 import ProvinceLayer from './ProvinceLayer';
 import TerrainGlyphSkia from './TerrainGlyphSkia';
@@ -119,6 +120,13 @@ export default function MapScene({ map, provinceOwners, selectedProvinceId }: Ma
           </Group>
         );
       })}
+
+      {/* Горные хребты — НА границе конкретной пары провинций, поверх обеих
+          заливок сразу, а не decoration внутри одной из них. Соответствующая
+          пара исключена из целей атаки — см. GameScreen.tsx/gameLogic.ts. */}
+      {map.mountainBorders.map((border) => (
+        <MountainBorderGlyph key={`${border.a}-${border.b}`} border={border} />
+      ))}
 
       {/* Тонкая светлая кромка поверх провинций — граница суши и моря. */}
       <Path path={coastline} style="stroke" color="#eee3c4" strokeWidth={1.5} strokeJoin="round" />

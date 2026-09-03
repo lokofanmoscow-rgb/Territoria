@@ -182,6 +182,21 @@ export function resolveReinforcements(
 }
 
 // ---------------------------------------------------------------------------
+// Горные границы (map.mountainBorders) блокируют прямую атаку между
+// конкретной парой провинций в обе стороны — не зависит от направления.
+// UI (GameScreen) не должен вообще предлагать такие цели, но это финальная
+// проверка на сервере/в логике игры: даже если атака как-то попала в
+// pendingMoves (рассинхрон клиента, будущий читер), она молча игнорируется.
+
+export function pairKey(a: number, b: number): string {
+  return a < b ? `${a}-${b}` : `${b}-${a}`;
+}
+
+export function isBlockedPair(a: number, b: number, blockedPairs: ReadonlySet<string>): boolean {
+  return blockedPairs.has(pairKey(a, b));
+}
+
+// ---------------------------------------------------------------------------
 // Бой. Детерминированная формула без RNG: сравниваются attack-сила
 // отправленных юнитов и defense-сила гарнизона. Победитель теряет часть
 // участвовавших войск пропорционально тому, насколько close был бой (близкий
@@ -267,10 +282,12 @@ function collectAttacks(pendingMoves: Record<string, PlayerPendingMove>): FlatAt
 export function resolveAttacks(
   provinces: Record<number, ProvinceState>,
   pendingMoves: Record<string, PlayerPendingMove>,
+  blockedPairs: ReadonlySet<string> = new Set(),
 ): { provinces: Record<number, ProvinceState>; outcomes: AttackOutcome[] } {
   let current = provinces;
   const outcomes: AttackOutcome[] = [];
   for (const attack of collectAttacks(pendingMoves)) {
+    if (isBlockedPair(attack.from, attack.to, blockedPairs)) continue;
     const result = resolveSingleAttack(current, attack.attackerId, attack);
     current = result.provinces;
     outcomes.push(result.outcome);
@@ -312,6 +329,7 @@ export interface ResolveRoundInput {
   regions: RegionStatic[];
   players: PlayerInfo[];
   pendingMoves: Record<string, PlayerPendingMove>;
+  blockedPairs?: ReadonlySet<string>;
 }
 
 export interface ResolveRoundResult {
@@ -339,7 +357,7 @@ export function resolveRound(input: ResolveRoundInput): ResolveRoundResult {
     return { ...player, gold: result.gold };
   });
 
-  const attackResult = resolveAttacks(provinces, input.pendingMoves);
+  const attackResult = resolveAttacks(provinces, input.pendingMoves, input.blockedPairs);
   provinces = attackResult.provinces;
 
   const winnerId = checkWinner(provinces, playersAfterReinforcements);

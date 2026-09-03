@@ -3,7 +3,11 @@ import type { BiomeId } from './biome';
 import { inscribedRadius } from './geometry';
 import { hash } from './random';
 
-export type ReliefType = 'forest' | 'mountains' | 'hills' | 'dunes' | 'grass' | 'none';
+// 'mountains' сюда не входит — горы больше не рисуются decoration внутри
+// провинции, только как хребет НА ГРАНИЦЕ между двумя провинциями (реальный
+// физический барьер для атак), см. MountainBorderGlyph.tsx и
+// map.mountainBorders.
+export type ReliefType = 'forest' | 'hills' | 'dunes' | 'grass' | 'none';
 
 export interface ReliefGlyph {
   type: ReliefType;
@@ -13,50 +17,42 @@ export interface ReliefGlyph {
   rotation: number;
 }
 
-// Горы/холмы могут пересекать климатические пояса (как в реальной
-// географии — хребет не спрашивает, тундра под ним или лес), поэтому тип
-// рельефа выбирается отдельным броском по каждому биому, а не совпадает с
-// самим биомом один-в-один.
+// Тип рельефа выбирается отдельным броском по каждому биому, а не совпадает
+// с самим биомом один-в-один. Вес, который раньше уходил горам (теперь они
+// не decoration провинции, а хребет на границе — см. MountainBorderGlyph),
+// перераспределён в hills — ближайший по духу "неровный" рельеф.
 const RELIEF_TABLE: Record<BiomeId, { type: ReliefType; weight: number }[]> = {
   tundra: [
     { type: 'none', weight: 35 },
-    { type: 'hills', weight: 25 },
-    { type: 'mountains', weight: 40 },
+    { type: 'hills', weight: 65 },
   ],
   taiga: [
     { type: 'forest', weight: 55 },
-    { type: 'hills', weight: 15 },
-    { type: 'mountains', weight: 30 },
+    { type: 'hills', weight: 45 },
   ],
   forest: [
     { type: 'forest', weight: 65 },
-    { type: 'hills', weight: 15 },
-    { type: 'mountains', weight: 15 },
+    { type: 'hills', weight: 30 },
     { type: 'none', weight: 5 },
   ],
   grassland: [
     { type: 'none', weight: 25 },
     { type: 'grass', weight: 25 },
     { type: 'forest', weight: 15 },
-    { type: 'hills', weight: 20 },
-    { type: 'mountains', weight: 15 },
+    { type: 'hills', weight: 35 },
   ],
   hills: [
-    { type: 'hills', weight: 35 },
-    { type: 'mountains', weight: 40 },
+    { type: 'hills', weight: 75 },
     { type: 'forest', weight: 25 },
   ],
   desert: [
     { type: 'dunes', weight: 55 },
     { type: 'none', weight: 15 },
-    { type: 'hills', weight: 15 },
-    { type: 'mountains', weight: 15 },
+    { type: 'hills', weight: 30 },
   ],
 };
 
-// mountains сюда не входит — для гор ровно один составной глиф-хребет,
-// см. getReliefGlyphs.
-const GLYPH_COUNT: Record<Exclude<ReliefType, 'mountains'>, [number, number]> = {
+const GLYPH_COUNT: Record<ReliefType, [number, number]> = {
   forest: [3, 5],
   hills: [2, 4],
   dunes: [2, 3],
@@ -82,25 +78,6 @@ function pickReliefType(biomeId: BiomeId, provinceId: number): ReliefType {
 export function getReliefGlyphs(province: ProvinceStatic, biomeId: BiomeId): ReliefGlyph[] {
   const type = pickReliefType(biomeId, province.id);
   const radius = inscribedRadius(province.points, province.centroid);
-
-  // Горы — не рассыпанные иконки-треугольники, а один цельный многовершинный
-  // хребет (см. MountainRange в TerrainGlyph.tsx), отцентрованный в
-  // провинции с небольшим дрожанием — гряда должна читаться как ландшафт,
-  // а не как штамп значка.
-  if (type === 'mountains') {
-    const size = Math.max(7, Math.min(17, radius * 0.6));
-    const jitter = radius * 0.12;
-    const angle = ((hash(province.id * 53 + 11) % 360) * Math.PI) / 180;
-    return [
-      {
-        type,
-        x: province.centroid[0] + Math.cos(angle) * jitter,
-        y: province.centroid[1] + Math.sin(angle) * jitter,
-        size,
-        rotation: 0,
-      },
-    ];
-  }
 
   const [min, max] = GLYPH_COUNT[type];
   if (max === 0) return [];

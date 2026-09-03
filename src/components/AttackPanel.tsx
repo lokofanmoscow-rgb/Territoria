@@ -21,16 +21,31 @@ export interface QueuedAttack {
 interface AttackPanelProps {
   hasUnitsAvailable: boolean;
   targets: AttackTarget[];
+  /** сколько соседей исключено из целей — граница с ними перекрыта горами */
+  blockedCount?: number;
   onSend: (targetId: number, fraction: 'all' | 'half') => void;
   queued: QueuedAttack[];
   onRemove: (id: number) => void;
 }
 
-export default function AttackPanel({ hasUnitsAvailable, targets, onSend, queued, onRemove }: AttackPanelProps) {
+export default function AttackPanel({
+  hasUnitsAvailable,
+  targets,
+  blockedCount = 0,
+  onSend,
+  queued,
+  onRemove,
+}: AttackPanelProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Атака (соседние провинции)</Text>
-      {targets.length === 0 && <Text style={styles.hint}>Нет соседних провинций.</Text>}
+      {targets.length === 0 && blockedCount === 0 && <Text style={styles.hint}>Нет соседних провинций.</Text>}
+      {blockedCount > 0 && (
+        <Text style={styles.hint}>
+          {blockedCount === 1 ? 'Ещё 1 граница перекрыта горами' : `Ещё ${blockedCount} границ перекрыто горами`} —
+          прямая атака невозможна.
+        </Text>
+      )}
       {targets.map((target) => (
         <View key={target.provinceId} style={styles.row}>
           <View style={styles.targetInfo}>

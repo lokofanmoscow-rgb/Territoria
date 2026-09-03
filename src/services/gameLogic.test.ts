@@ -8,6 +8,7 @@ import {
   applyUpkeep,
   checkWinner,
   computeIncome,
+  pairKey,
   resolveAttacks,
   resolveReinforcements,
   resolveRound,
@@ -133,6 +134,23 @@ describe('бой (через resolveAttacks)', () => {
     // после первой атаки провинция 2 уже принадлежит "a" — вторая атака бьётся с новым хозяином
     assert.equal(outcomes[1].attackerId, 'c');
     assert.notEqual(next[2].ownerId, 'neutral');
+  });
+
+  test('атака между провинциями с горной границей игнорируется', () => {
+    const provinces = {
+      0: province('a', { infantry: 10 }),
+      1: province('b', { infantry: 1 }),
+    };
+    const pendingMoves: Record<string, PlayerPendingMove> = {
+      a: { reinforcements: {}, attacks: [{ from: 0, to: 1, units: { infantry: 10 } }], submitted: true },
+    };
+    const blockedPairs = new Set([pairKey(0, 1)]);
+
+    const { provinces: next, outcomes } = resolveAttacks(provinces, pendingMoves, blockedPairs);
+
+    assert.equal(outcomes.length, 0, 'заблокированная атака не должна резолвиться вообще');
+    assert.equal(next[0].units.infantry, 10, 'войска остаются на месте — атака не состоялась');
+    assert.equal(next[1].ownerId, 'b', 'провинция-цель не переходит');
   });
 });
 

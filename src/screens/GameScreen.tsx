@@ -11,7 +11,7 @@ import { getMapData } from '../assets/maps';
 import { PLAYER_COLORS } from '../constants/playerColors';
 import { UNIT_TYPE_IDS, UNIT_TYPES, type UnitType } from '../constants/unitTypes';
 import type { RootStackParamList } from '../navigation/RootNavigator';
-import { resolveRound, STARTING_GOLD, totalUnits } from '../services/gameLogic';
+import { isBlockedPair, pairKey, resolveRound, STARTING_GOLD, totalUnits } from '../services/gameLogic';
 import type { ArmyComposition, AttackMove, PlayerInfo, PlayerPendingMove, ProvinceState } from '../types/game';
 import type { MapData } from '../types/map';
 import { getBiome } from '../utils/biome';
@@ -58,6 +58,12 @@ export default function GameScreen({ navigation }: Props) {
   const initial = useMemo(() => buildInitialGameState(mapData), [mapData]);
   const { width: mapWidth, height: mapHeight } = parseViewBox(mapData.viewBox);
   const hitTestProvince = useMemo(() => createProvinceHitTester(mapData), [mapData]);
+  // Горные границы (map.mountainBorders) блокируют прямую атаку между
+  // конкретной парой провинций — см. gameLogic.ts pairKey/isBlockedPair.
+  const blockedPairs = useMemo(
+    () => new Set(mapData.mountainBorders.map((border) => pairKey(border.a, border.b))),
+    [mapData],
+  );
 
   const [provinces, setProvinces] = useState(initial.provinces);
   const [players, setPlayers] = useState(initial.players);
@@ -116,18 +122,21 @@ export default function GameScreen({ navigation }: Props) {
 
   const availableFromSelected = selectedId !== null ? getAvailableUnits(selectedId) : {};
 
-  const attackTargets: AttackTarget[] = selectedProvince
-    ? selectedProvince.neighbors.map((neighborId) => {
-        const neighborState = provinces[neighborId];
-        const owner = neighborState?.ownerId ? players.find((p) => p.uid === neighborState.ownerId) : undefined;
-        return {
-          provinceId: neighborId,
-          label: `№${neighborId}`,
-          ownerLabel: owner ? owner.name : 'Ничья',
-          ownerColor: owner?.color,
-        };
-      })
+  const openNeighbors = selectedProvince
+    ? selectedProvince.neighbors.filter((neighborId) => !isBlockedPair(selectedProvince.id, neighborId, blockedPairs))
     : [];
+  const blockedNeighborCount = selectedProvince ? selectedProvince.neighbors.length - openNeighbors.length : 0;
+
+  const attackTargets: AttackTarget[] = openNeighbors.map((neighborId) => {
+    const neighborState = provinces[neighborId];
+    const owner = neighborState?.ownerId ? players.find((p) => p.uid === neighborState.ownerId) : undefined;
+    return {
+      provinceId: neighborId,
+      label: `№${neighborId}`,
+      ownerLabel: owner ? owner.name : 'Ничья',
+      ownerColor: owner?.color,
+    };
+  });
 
   const queuedFromSelected: QueuedAttack[] = pendingAttacks
     .map((attack, id) => ({ attack, id }))
@@ -189,7 +198,7 @@ export default function GameScreen({ navigation }: Props) {
       pendingMoves[p.uid] = { reinforcements: {}, attacks: [], submitted: true };
     }
 
-    const result = resolveRound({ provinces, regions: mapData.regions, players, pendingMoves });
+    const result = resolveRound({ provinces, regions: mapData.regions, players, pendingMoves, blockedPairs });
 
     setProvinces(result.provinces);
     setPlayers(result.players);
@@ -235,6 +244,7 @@ export default function GameScreen({ navigation }: Props) {
               <AttackPanel
                 hasUnitsAvailable={totalUnits(availableFromSelected) > 0}
                 targets={attackTargets}
+                blockedCount={blockedNeighborCount}
                 onSend={handleSendAttack}
                 queued={queuedFromSelected}
                 onRemove={handleRemoveAttack}
